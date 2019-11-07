@@ -108,6 +108,10 @@ public:
 
 #ifndef YAAWS_NOTHING_EVER_CHANGES
 	virtual bool IsMutable(const char *path);
+
+	//  We don't save the original filename, so nothing matches directly with the path passed to
+	//  'IsMutable'.  Workaround - just use uniquely named files, since you can get the filename
+	//  portion form the file object.
 	virtual bool FileAction(EthernetClient &, WebFileType &);
 #endif
 };
