@@ -65,7 +65,7 @@
 #define YAAWS_NO_FLASHY_FLASHY       //  Don't flash built-in LED on activity
 #endif
 
-//#define YAAWS_HUSH_NOW               //  Disable internal tracing
+#define YAAWS_HUSH_NOW               //  Disable internal tracing
 
 //#define YAAWS_ONE_STREAM_ONLY        //  Use only one connection
 //#define YAAWS_404_THE_ONE_TRUE_ERROR //  All errors reported as 404
