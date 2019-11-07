@@ -57,7 +57,7 @@ public:
 	bool IsMutable(const char *path);
 	bool FileAction(EthernetClient &, WebFileType &);
 private:
-	int _stepNumber;
+	int _stepNumber;  //  What 'step' of processing we are on.
 };
 
 DynamicHTMLHandler::DynamicHTMLHandler()
@@ -68,7 +68,12 @@ DynamicHTMLHandler::DynamicHTMLHandler()
 bool DynamicHTMLHandler::IsMutable(
 	const char *path)
 {
-	return strcasecmp_P(path, PSTR("/analog.html"));
+	bool val = strcasecmp_P(path, PSTR("/analog.html"));
+
+	if (val)
+		_stepNumber = 0;
+
+	return val;
 }
 
 
@@ -78,7 +83,7 @@ const char Html1[] PROGMEM =
 "<html>"
 "<head>"
 "<meta content=\"text/html; charset=utf-8\" http-equiv=\"Content-Type\">"
-"<title>Directory Listing</title>"
+"<title>Sensors</title>"
 "</head>"
 "<body>"
 "<div style=\"width:400px\">"
@@ -105,12 +110,16 @@ typedef const __FlashStringHelper *fsh;
 
 //  The first time this is called, the HTTP response header has already been sent to the client, and
 //  the file is positioned at the beginning, with nothing sent.  Once you return 'false', the server
-//  will take care of sending the rest of the file, and you will not be called any more for this
-//  request.
+//  will take care of sending the rest of the file and closing the connection, and you will not be
+//  called any more for this request.
 bool DynamicHTMLHandler::FileAction(
 	EthernetClient &client,
 	WebFileType &file)
 {
+
+	//  If you have multiple files you want to change in different ways, you can check the file name
+	//  here (using file.getName()),then process the files differently.
+	
 	//  The file we are changing doesn't have to have anything in it!
 	//  We can replace the file entirely, it just has to exist.
 	if (_stepNumber == 0)
