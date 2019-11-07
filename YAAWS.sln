@@ -1,0 +1,57 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29411.108
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "YAAWS", "YAAWS.vcxitems", "{B524EA66-2385-4E48-949E-EBD65CD35B61}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BasicWebServer", "examples\BasicWebServer\BasicWebServer.vcxproj", "{C5F80730-F44F-4478-BDAE-6634EFC2CA88}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SdFat-1.1.0", "..\SdFat\SdFat-1.1.0.vcxitems", "{A3C101BE-BC34-48E1-ADBB-95B6FF56E1C7}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Ethernet-2.0.0", "..\..\..\..\..\..\Program Files (x86)\Arduino\libraries\Ethernet\Ethernet-2.0.0.vcxitems", "{F7D7177B-1F01-4131-B640-F39676DDFDAE}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SPI-1.0", "..\..\..\..\..\..\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\SPI\SPI-1.0.vcxitems", "{3AD16FB1-7BC0-4416-8B46-591374A30981}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Wire-1.0", "..\..\..\..\..\..\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\Wire\Wire-1.0.vcxitems", "{2AB59789-2AF5-4DE3-A16D-247F59776973}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dependencies", "Dependencies", "{9EA7929A-6DDF-44B4-9067-4A3B095716B4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{3A706DFD-40D2-434C-93F1-4850D3621356}"
+EndProject
+Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\..\..\..\..\..\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\Wire\Wire-1.0.vcxitems*{2ab59789-2af5-4de3-a16d-247f59776973}*SharedItemsImports = 9
+		..\..\..\..\..\..\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\SPI\SPI-1.0.vcxitems*{3ad16fb1-7bc0-4416-8b46-591374a30981}*SharedItemsImports = 9
+		..\SdFat\SdFat-1.1.0.vcxitems*{a3c101be-bc34-48e1-adbb-95b6ff56e1c7}*SharedItemsImports = 9
+		YAAWS.vcxitems*{b524ea66-2385-4e48-949e-ebd65cd35b61}*SharedItemsImports = 9
+		..\..\..\..\..\..\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\SPI\SPI-1.0.vcxitems*{c5f80730-f44f-4478-bdae-6634efc2ca88}*SharedItemsImports = 4
+		..\..\..\..\..\..\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\Wire\Wire-1.0.vcxitems*{c5f80730-f44f-4478-bdae-6634efc2ca88}*SharedItemsImports = 4
+		..\..\..\..\..\..\Program Files (x86)\Arduino\libraries\Ethernet\Ethernet-2.0.0.vcxitems*{c5f80730-f44f-4478-bdae-6634efc2ca88}*SharedItemsImports = 4
+		..\SdFat\SdFat-1.1.0.vcxitems*{c5f80730-f44f-4478-bdae-6634efc2ca88}*SharedItemsImports = 4
+		..\..\..\..\..\..\Program Files (x86)\Arduino\libraries\Ethernet\Ethernet-2.0.0.vcxitems*{f7d7177b-1f01-4131-b640-f39676ddfdae}*SharedItemsImports = 9
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|x86.ActiveCfg = Debug|Win32
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|x86.Build.0 = Debug|Win32
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x86.ActiveCfg = Release|Win32
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88} = {3A706DFD-40D2-434C-93F1-4850D3621356}
+		{A3C101BE-BC34-48E1-ADBB-95B6FF56E1C7} = {9EA7929A-6DDF-44B4-9067-4A3B095716B4}
+		{F7D7177B-1F01-4131-B640-F39676DDFDAE} = {9EA7929A-6DDF-44B4-9067-4A3B095716B4}
+		{3AD16FB1-7BC0-4416-8B46-591374A30981} = {9EA7929A-6DDF-44B4-9067-4A3B095716B4}
+		{2AB59789-2AF5-4DE3-A16D-247F59776973} = {9EA7929A-6DDF-44B4-9067-4A3B095716B4}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2ADED74B-278D-449B-8C9A-6F3C0C48CA47}
+	EndGlobalSection
+EndGlobal
