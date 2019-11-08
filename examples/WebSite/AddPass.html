@@ -1,0 +1,266 @@
+<HTML>
+<HEAD>
+	<style>
+		div.FloatLeft {
+			float: left;
+			margin-right: 1em;
+		}
+
+		div.FloatRight {
+			float: right;
+			margin-left: 1em;
+		}
+
+		div.VertContainer {
+			display: table
+		}
+
+		div.VertAlign {
+			display: table-cell;
+			vertical-align: middle;
+		}
+
+		.indent {
+			margin-left: 1em;
+		}
+	</style>
+	<TITLE>Gate Password Entry</TITLE>
+</HEAD>
+<BODY>
+	<script type="text/javascript">
+
+		if (window.location.search.length > 1) {
+			window.location.search = "";
+		}
+	</script>
+
+	<div style="width: 90%; margin: 0 auto;">
+		<div class="FloatLeft" style="width: 50%">
+			<h1>Enter a new password:</h1>
+			<form method="get" autocomplete="off" name="NewPassword" onsubmit="return validateAddForm()">
+				<div class="VertContainer">
+					<div class="FloatLeft">
+						Rule Name:<br />
+						<input class="indent" type="text" name="N" autofocus /><br /><br />
+						Password (4 digits):<br />
+						<input style="margin-left: 1em;" type="text" maxlength="4" size="4" name="P" />
+					</div>
+					<div class="VertAlign">
+						<input type="radio" name="G" value="C" checked />Cycle Gate<br />
+						<input type="radio" name="G" value="H" />Hold Gate<br />
+						<input type="radio" name="G" value="R" />Release Gate<br />
+					</div>
+				</div>
+
+				<hr />
+
+				<div class="VertContainer">
+					<div class="FloatLeft">
+						Days Active:
+						<div class="indent">
+
+							<input type="checkbox" name="D1" checked disabled />Monday<br />
+							<input type="checkbox" name="D2" checked disabled />Tuesday<br />
+							<input type="checkbox" name="D3" checked disabled />Wednesday<br />
+							<input type="checkbox" name="D4" checked disabled />Thursday<br />
+							<input type="checkbox" name="D5" checked disabled />Friday<br />
+							<input type="checkbox" name="D6" checked disabled />Saturday<br />
+							<input type="checkbox" name="D7" checked disabled />Sunday<br />
+						</div>
+					</div>
+					<div class="VertAlign">
+						<input type="checkbox" name="W" checked onchange="AllWeekSelect()" />All Week<br />
+					</div>
+				</div>
+				<hr />
+				<div id="TimePicker">
+					<div class="VertContainer">
+						<div class="FloatLeft">
+							<table>
+								<tr>
+									<td>Start Time</td>
+									<td>End Time</td>
+								</tr>
+								<tr>
+									<td>
+										<select name="S" onchange="AllDayTime()" disabled>
+											<option value="0" selected>00:00</option>
+											<option value="1">01:00</option>
+											<option value="2">02:00</option>
+											<option value="3">03:00</option>
+											<option value="4">04:00</option>
+											<option value="5">05:00</option>
+											<option value="6">06:00</option>
+											<option value="7">07:00</option>
+											<option value="8">08:00</option>
+											<option value="9">09:00</option>
+											<option value="10">10:00</option>
+											<option value="11">11:00</option>
+											<option value="12">12:00</option>
+											<option value="13">13:00</option>
+											<option value="14">14:00</option>
+											<option value="15">15:00</option>
+											<option value="16">16:00</option>
+											<option value="17">17:00</option>
+											<option value="18">18:00</option>
+											<option value="19">19:00</option>
+											<option value="20">20:00</option>
+											<option value="21">21:00</option>
+											<option value="22">22:00</option>
+											<option value="23">23:00</option>
+										</select>
+									</td>
+									<td>
+										<select name="E" onchange="AllDayTime()" disabled>
+											<option value="1">01:00</option>
+											<option value="2">02:00</option>
+											<option value="3">03:00</option>
+											<option value="4">04:00</option>
+											<option value="5">05:00</option>
+											<option value="6">06:00</option>
+											<option value="7">07:00</option>
+											<option value="8">08:00</option>
+											<option value="9">09:00</option>
+											<option value="10">10:00</option>
+											<option value="11">11:00</option>
+											<option value="12">12:00</option>
+											<option value="13">13:00</option>
+											<option value="14">14:00</option>
+											<option value="15">15:00</option>
+											<option value="16">16:00</option>
+											<option value="17">17:00</option>
+											<option value="18">18:00</option>
+											<option value="19">19:00</option>
+											<option value="20">20:00</option>
+											<option value="21">21:00</option>
+											<option value="22">22:00</option>
+											<option value="23">23:00</option>
+											<option value="24" selected>24:00</option>
+										</select>
+									</td>
+								</tr>
+							</table>
+
+						</div>
+						<div class="VertAlign">
+							<input type="checkbox" name="A" checked onchange="TimeSelect()" />All Day
+						</div>
+					</div>
+				</div>
+
+				<br />
+				<hr />
+				<br />
+				<input type="submit" value="Add Password" />
+			</form>
+		</div>
+		<div class="FloatRight" style="width: 45%">
+			<h1>Delete a password:</h1>
+			<form method="get" autocomplete="off" name="DelPassword" onsubmit="return validateDelForm()">
+				Password (4 digits):<br />
+				<input style="margin-left: 1em;" type="text" maxlength="4" size="4" name="X" />
+				<br />
+				<hr />
+				<br />
+
+				<input type="submit" value="Delete Password" />
+			</form>
+		</div>
+	</div>
+	<div style="clear:both">
+		<hr />
+		<a href="index.html">Main Page --></a>
+	</div>
+	<script type="text/javascript">
+		var days = ["D1", "D2", "D3", "D4", "D5", "D6", "D7"];
+		var len = days.length;
+
+		function validateAddForm() {
+			var x;
+			x = document.forms["NewPassword"]["N"].value;
+			if (x == "") {
+				alert("Name must be filled out");
+				return false;
+			}
+
+			x = document.forms["NewPassword"]["P"].value;
+			var isnum = /^\d+$/.test(x);
+			if (x.length < 4 || !isnum) {
+				alert("Password must be 4 digits");
+				return false;
+			}
+
+			var oneChecked = false;
+
+			for (var i = 0; i < len; i++) {
+				oneChecked = oneChecked || (document.forms["NewPassword"][days[i]].checked);
+			}
+
+			if (!oneChecked) {
+				alert("Must select at least one day");
+				return false;
+			}
+
+			if (Number(document.forms["NewPassword"]["S"].value) >= Number(document.forms["NewPassword"]["E"].value)) {
+				alert("Start Time must be less than End Time");
+				return false;
+			}
+			return true;
+		}
+
+		function validateDelForm()
+		{
+			x = document.forms["DelPassword"]["X"].value;
+			var isnum = /^\d+$/.test(x);
+			if (x.length < 4 || !isnum) {
+				alert("Password must be 4 digits");
+				return false;
+			}
+
+			return true;
+		}
+
+
+		function AllDayTime() {
+			var t1 = document.forms["NewPassword"]["S"].selectedIndex;
+			var t2 = document.forms["NewPassword"]["E"].selectedIndex;
+			if (t1 == 0 && t2 == 23) {
+				document.forms["NewPassword"]["A"].checked = true;
+			}
+			else {
+				document.forms["NewPassword"]["A"].checked = false;
+			}
+		}
+
+		function TimeSelect() {
+			if (document.forms["NewPassword"]["A"].checked) {
+				document.forms["NewPassword"]["S"].selectedIndex = 0;
+				document.forms["NewPassword"]["S"].disabled = true;
+
+				document.forms["NewPassword"]["E"].selectedIndex = 23;
+				document.forms["NewPassword"]["E"].disabled = true;
+
+
+			}
+			else {
+				document.forms["NewPassword"]["S"].disabled = false;
+				document.forms["NewPassword"]["E"].disabled = false;
+
+			}
+		}
+
+		function AllWeekSelect() {
+			var f = false;
+			if (document.forms["NewPassword"]["W"].checked) {
+				f = true;
+			}
+
+			for (var i = 0; i < len; i++) {
+				document.forms["NewPassword"][days[i]].disabled = f;
+				document.forms["NewPassword"][days[i]].checked = true;
+			}
+		}
+	</script>
+
+</BODY>
+</HTML>

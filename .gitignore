@@ -353,3 +353,4 @@ MigrationBackup/
 .ionide/
 /examples/BasicWebServer/__vm
 /examples/DynamicHTML/__vm
+/examples/FormData/__vm
