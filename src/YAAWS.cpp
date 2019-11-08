@@ -2,20 +2,22 @@
 //
 //  Copyright(c) 2019 M Hotchin
 //
-//  Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-//  and associated documentation files(the "Software"), to deal in the Software without restriction,
-//  including without limitation the rights to use, copy, modify, merge, publish, distribute,
-//  sublicense, and/or sell copies of the Software, andto permit persons to whom the Software is
-//  furnished to do so, subject to the following conditions :
+//  Permission is hereby granted, free of charge, to any person obtaining a copy of this
+//  software and associated documentation files(the "Software"), to deal in the Software
+//  without restriction, including without limitation the rights to use, copy, modify,
+//  merge, publish, distribute, sublicense, and/or sell copies of the Software, andto
+//  permit persons to whom the Software is furnished to do so, subject to the following
+//  conditions :
 //
-//  The above copyright notice andthis permission notice shall be included in all copies or
-//  substantial portions of the Software.
+//  The above copyright notice andthis permission notice shall be included in all copies
+//  or substantial portions of the Software.
 //
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
-//  BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-//  NONINFRINGEMENT.IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-//  DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+//  INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+//  PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+//  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+//  CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+//  OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
 #include <Arduino.h>
@@ -84,20 +86,83 @@ namespace
 		digitalWrite(LED_BUILTIN, LOW);
 	}
 #endif
+
+	// URl decoder, taken from
+	// https://stackoverflow.com/questions/2673207/c-c-url-decode-library/19826808
+	// License is CC-BY-SA https://creativecommons.org/licenses/by-sa/4.0/
+	void urldecode2(const char *src, char *dst)
+	{
+		if (!src || !dst) return;
+
+		char a, b;
+		while (*src)
+		{
+			if ((*src == '%') &&
+				((a = src[1]) && (b = src[2])) &&
+				(isxdigit(a) && isxdigit(b)))
+			{
+				if (a >= 'a')
+					a -= 'a' - 'A';
+				if (a >= 'A')
+					a -= ('A' - 10);
+				else
+					a -= '0';
+				if (b >= 'a')
+					b -= 'a' - 'A';
+				if (b >= 'A')
+					b -= ('A' - 10);
+				else
+					b -= '0';
+				*dst++ = 16 * a + b;
+				src += 3;
+			}
+			else if (*src == '+')
+			{
+				*dst++ = ' ';
+				src++;
+			}
+			else
+			{
+				*dst++ = *src++;
+			}
+		}
+		*dst++ = '\0';
+	}
+
+	//  In place URL decoder.  Decoding *never* producings a string larger than its input.
+	void urldecode2(char *srcdst)
+	{
+		return urldecode2(srcdst, srcdst);
+	}
 }
 
 //  Number of items in an array
 #define COUNTOF(x) (sizeof(x)/sizeof(x[0]))
 
-void YaawsCallback::ProcessFormData(
+//  Default implementation accepts all inputs as valid.
+bool YaawsCallback::ProcessFormData(
 	const char *path, char *formData)
-{}
+{
+	return true;
+}
 
 
 #ifndef YAAWS_GET_IS_ALL_WE_NEED
-void YaawsCallback::ProcessPostData(
-	const char *path, EthernetClient &)
-{}
+
+//  Default implementation just passes the POST data as a URL query string to the GET
+//  handler.
+bool YaawsCallback::ProcessPostData(
+	const char *path, EthernetClient &client)
+{
+	constexpr size_t bufferSize = 128;
+	char buffer[bufferSize + 1];
+
+	auto amountRead = client.readBytes(buffer, bufferSize);
+
+	buffer[amountRead] = '\0';
+
+	return ProcessFormData(path, buffer);
+}
 #endif
 
 #ifndef YAAWS_NOTHING_EVER_CHANGES
@@ -115,6 +180,48 @@ bool YaawsCallback::FileAction(
 }
 #endif
 
+char *YaawsCallback::getNextQueryPair(
+	char *queryString,
+	queryPair &nameValuePair)
+{
+	nameValuePair._name = nullptr;
+	nameValuePair._value = nullptr;
+
+	if ((queryString == nullptr) || (*queryString == '\0'))
+	{
+		return nullptr;
+	}
+
+	char *retVal = nullptr;
+
+	char *end = strchr(queryString, '&');
+
+	if (end != nullptr)
+	{
+		*end = '\0';
+		retVal = end + 1;
+	}
+
+	char *split = strchr(queryString, '=');
+
+	if (split != nullptr)
+	{
+		*split = '\0';
+		split++;
+	}
+
+	urldecode2(queryString);
+	urldecode2(split);
+
+	nameValuePair._name = queryString;
+	nameValuePair._value = split;
+}
+
+void YaawsCallback::urlDecode(
+	char *encodedString)
+{
+	urldecode2(encodedString);
+}
 
 YaawsCallback defaultCallback;
 
@@ -147,8 +254,8 @@ enum YAAWS::ResponseType : byte
 
 namespace
 {
-	//  Text for all the different HTML Response headers. Except for 404, all
-	//  the rest differ only by the value of the 'Content-Type' directive.
+	//  Text for all the different HTML Response headers. Except for 404, all the rest
+	//  differ only by the value of the 'Content-Type' directive.
 	const char str200Header[] PROGMEM =
 		"HTTP/1.0 200 OK\n"
 		"Server: YAAWS/1.0\n"
@@ -295,8 +402,8 @@ YAAWS::YAAWS(
 
 
 
-//  If this returns false, your webserver won't be working.  Check that your
-//  ethernet and SD Card are working.
+//  If this returns false, your webserver won't be working.  Check that your ethernet and
+//  SD Card are working.
 bool YAAWS::begin(void)
 {
 #ifndef YAAWS_NO_FLASHY_FLASHY
@@ -324,8 +431,7 @@ YAAWS::ResponseType YAAWS::GetResponseType(const char *fileName)
 	const char *nameStart = strrchr(fileName, '/');
 	const char *extPos = strrchr(nameStart ? nameStart : fileName, '.');
 
-	// Use the file extension to decide the 'Content-type' in the HTML
-	// response header.
+	// Use the file extension to decide the 'Content-type' in the HTML response header.
 	if (extPos)
 	{
 		extPos++;
@@ -353,8 +459,8 @@ YAAWS::ResponseType YAAWS::GetResponseType(const char *fileName)
 
 
 
-//  Send the first part of the response - the HTML Response Header.  The
-//  'Content-Type' directive is determined by the file's extension.
+//  Send the first part of the response - the HTML Response Header.  The 'Content-Type'
+//  directive is determined by the file's extension.
 void YAAWS::SendResponseHeader()
 {
 	TRACE(F("SendResponseHeader"));
@@ -386,9 +492,9 @@ void YAAWS::SendResponseHeader()
 			strncat_P(buffer, strNonCacheable, buffSize);
 		}
 
-		//  If the file is not mutable, we can provide a Content-length:
-		//  directive and an 'ETag' for cache validation.  Only mutable files
-		//  will have this set at this point.
+		//  If the file is not mutable, we can provide a Content-length: directive and an
+		//  'ETag' for cache validation.  Only mutable files will have this set at this
+		//  point.
 #ifndef YAAWS_NOTHING_EVER_CHANGES
 		if (!contData.doFileAction)
 #endif
@@ -418,8 +524,8 @@ void YAAWS::SendResponseHeader()
 }
 
 
-//  Clean up our connection once we are done with it, whatever the reason.  Flush the data, mark the
-//  connection as available
+//  Clean up our connection once we are done with it, whatever the reason.  Flush the
+//  data, mark the connection as available
 void YAAWS::FinishConnection()
 {
 	ContinuationData &contData = _contData[_serviceIndex];
@@ -440,8 +546,8 @@ void YAAWS::FinishConnection()
 }
 
 
-//  Send the actual file to the requestor.  Will return before sending the whole
-//  file, called repeatedly to keep things going.
+//  Send the actual file to the requestor.  Will return before sending the whole file,
+//  called repeatedly to keep things going.
 void YAAWS::SendSdFile()
 {
 	ContinuationData &contData = _contData[_serviceIndex];
@@ -449,10 +555,9 @@ void YAAWS::SendSdFile()
 
 	if (amountToWrite > 0)
 	{
-		//  Maximum we will write in one go. If we have only one client, use as
-		//  much of the undlying Ethernet frame size as possible.  Otherwise,
-		//  limit to a multiple of the SD sector size to reduce SD card
-		//  redundant reads. 
+		//  Maximum we will write in one go. If we have only one client, use as much of
+		//  the undlying Ethernet frame size as possible.  Otherwise, limit to a multiple
+		//  of the SD sector size to reduce SD card redundant reads. 
 		constexpr int maxBufferSize = (MAX_CLIENTS == 1) ? 1400 : 1024;
 
 #ifndef YAAWS_ONE_STREAM_ONLY
@@ -485,9 +590,9 @@ void YAAWS::SendSdFile()
 	}
 }
 
-// In general, we don't want Service calls to take *too* long. If a request is waiting, then the
-// first call will receive it, next will send back the response header. After that, each call will
-// transmit part of the response file.
+// In general, we don't want Service calls to take *too* long. If a request is waiting,
+// then the first call will receive it, next will send back the response header. After
+// that, each call will transmit part of the response file.
 void YAAWS::ContinueRequest(void)
 {
 	ContinuationData &contData = _contData[_serviceIndex];
@@ -519,8 +624,8 @@ void YAAWS::ContinueRequest(void)
 }
 
 
-//  Uses 'filename' as a caller provided buffer for building the filename.  Reduces max stack usage
-//  by re-using already allocated space.  We'll just assume things fit.
+//  Uses 'filename' as a caller provided buffer for building the filename.  Reduces max
+//  stack usage by re-using already allocated space.  We'll just assume things fit.
 void YAAWS::Return404(char *fileName)
 {
 	TRACE(F("404!"));
@@ -698,6 +803,8 @@ void YAAWS::AcceptIncoming()
 {
 	// Everything we need is on the first line, before the 'HTTP' keyword. Once we've
 	// located the keyword, we can throw everything else away.
+	//
+	// TO-DO - better buffer size for this?
 	constexpr size_t buffSize = 128;
 	char inputFileName[buffSize + 1] = {0};
 
@@ -705,12 +812,13 @@ void YAAWS::AcceptIncoming()
 
 	ContinuationData &contData = _contData[_serviceIndex];
 
-	//  Well isn't THAT special.  I'm seeing cases where the connection
-	//  does not arrive with the payload.  If you wait long enough, it
-	//  seems to show up.  Up to 30 ms seems possible.
+	//  Well isn't THAT special.  I'm seeing cases where the connection does not arrive
+	//  with the payload.  If you wait long enough, it seems to show up.  Up to 30 ms
+	//  seems possible.
 	if ((contData.rt == UNKNOWN) && !contData.client.available())
 	{
-		//  There's no timeout on this - we will wait as long as the connection is held open.
+		//  There's no timeout on this - we will wait as long as the connection is held
+		//  open.
 		TRACE(F("Awaiting incoming payload"));
 		return;
 	}
@@ -722,8 +830,8 @@ void YAAWS::AcceptIncoming()
 	size_t inputOffset = strlen(inputFileName);
 	char *pRequestStart = inputFileName + inputOffset;
 
-	//  Read in incoming request until buffer is full, or no more data, or end of
-	//  line, whatever comes first.
+	//  Read in incoming request until buffer is full, or no more data, or end of line,
+	//  whatever comes first.
 	while (contData.client.available() && (inputOffset < COUNTOF(inputFileName) - 1))
 	{
 		inputFileName[inputOffset] = contData.client.read();
@@ -747,8 +855,7 @@ void YAAWS::AcceptIncoming()
 		return;
 	}
 
-	//  Look for the "HTTP" marker.  URL is encoded, so marker should never be
-	//  in the URL.
+	//  Look for the "HTTP" marker.  URL is encoded, so marker should never be in the URL.
 	char *end = strstr_P(inputFileName, PSTR(" HTTP"));
 
 	if (end == nullptr)
@@ -765,12 +872,12 @@ void YAAWS::AcceptIncoming()
 	*end = '\0';
 
 
-	//  Determines the type of the request, then moves the URI down.  This appends it to the webroot
-	//  we initialized with (above), and gives us the filename.
+	//  Determines the type of the request, then moves the URI down.  This appends it to
+	//  the webroot we initialized with (above), and gives us the filename.
 	RequestType rt = GetRequestType(pRequestStart);
 
-	//  A 'HEAD' request is just a 'GET' without the actual payload.  In that case set the file
-	//  position to the end of the file, normal processing takes care of the rest.
+	//  A 'HEAD' request is just a 'GET' without the actual payload.  In that case set the
+	//  file position to the end of the file, normal processing takes care of the rest.
 	bool skipFileData = false;
 
 	switch (rt)
@@ -800,8 +907,7 @@ void YAAWS::AcceptIncoming()
 
 #ifndef YAAWS_GET_IS_ALL_WE_NEED
 	//  The end of the HTML request header is marked by the 4 character sequence
-	//  "\r\n\r\n".  Data after that may be needed for processing (e.g., POST
-	//  requests)
+	//  "\r\n\r\n".  Data after that may be needed for processing (e.g., POST requests)
 	if (rt == rtPost)
 	{
 		int HeaderMarker = 0;
@@ -844,8 +950,8 @@ void YAAWS::AcceptIncoming()
 		*FormDataString = '\0';
 		FormDataString++;
 
-		//  Input buffer now has a NUL terminated filename, then a NUL terminated string of form
-		//  data.  
+		//  Input buffer now has a NUL terminated filename, then a NUL terminated string
+		//  of form data.  
 
 		//  No sense 'processing' an empty query string.
 		if (*FormDataString == '\0')
@@ -858,6 +964,10 @@ void YAAWS::AcceptIncoming()
 		}
 	}
 
+	//  Only decode the filename!  If you decode the query string, it may then contain
+	//  extra '=' or '&' characters, which will hopelessly mess up parsing the query
+	//  string.
+	urldecode2(inputFileName);
 
 	if (inputFileName[strlen(inputFileName) - 1] == '/')
 	{
@@ -866,7 +976,8 @@ void YAAWS::AcceptIncoming()
 
 		strcat_P(inputFileName, PSTR("index.html"));
 
-		//  We might have stomped over form data.  New rule! - default files can't have form data!
+		//  We might have stomped over form data.  New rule! - default files can't have
+		//  form data!
 		FormDataString = nullptr;
 	}
 
@@ -885,9 +996,10 @@ void YAAWS::AcceptIncoming()
 	}
 
 #ifndef YAAWS_NOTHING_EVER_CHANGES
-	//  You can apply FileAction only to mutable files.
+	//  You can apply 'FileAction' only to mutable files.  We supply the URL path, NOT the
+	//  full file-system path.
 	contData.doFileAction =
-		!contData.sdFile.isReadOnly() && _callback.IsMutable(inputFileName);
+		!contData.sdFile.isReadOnly() && _callback.IsMutable(pRequestStart);
 #endif
 
 	//  Determine 'Content-type' of the file.
@@ -899,26 +1011,35 @@ void YAAWS::AcceptIncoming()
 		contData.sdFile.seekEnd();
 	}
 
-	//  Process form data.  We assume that only 'GET' requests have data in the request header that
-	//  needs to be processed.
+	//  Process form data.  We assume that only 'GET' requests have data in the request
+	//  header that needs to be processed.
 	if (rt == rtGet && FormDataString != nullptr)
 	{
 		TRACE(F("Form data:"));
 
 		IF_TRACE(Serial.println(FormDataString));
-		_callback.ProcessFormData(inputFileName, FormDataString);
+		if (!_callback.ProcessFormData(inputFileName, FormDataString))
+		{
+			Return400BadRequest();
+			return;
+		}
 	}
 
 #ifndef YAAWS_GET_IS_ALL_WE_NEED
 	if (rt == rtPost)
 	{
-		//  TODO - do we need the value of the 'Content-length' header to do this reliably?
-		_callback.ProcessPostData(inputFileName, contData.client);
+		//  TODO - do we need the value of the 'Content-length' header to do this
+		//  reliably?
+		if (!_callback.ProcessPostData(inputFileName, contData.client))
+		{
+			Return400BadRequest();
+			return;
+		}
 	}
 #endif
 
-	//  We've processed any form data.  More calls to 'ServiceWebServer' will send the HTTP Response
-	//  Header and the file back.
+	//  We've processed any form data.  More calls to 'ServiceWebServer' will send the
+	//  HTTP Response Header and the file back.
 }
 
 
@@ -930,8 +1051,7 @@ void YAAWS::AdvanceServiceIndex()
 #ifndef YAAWS_ONE_STREAM_ONLY
 	if ((_activeConnections != 0))
 	{
-		//  No need to look for the 'next' connection if this one is the only
-		//  one.
+		//  No need to look for the 'next' connection if this one is the only one.
 		if (_activeConnections != (1 << _serviceIndex))
 		{
 			for (auto i = 0; i < MAX_CLIENTS; i++)
@@ -980,8 +1100,8 @@ void YAAWS::ServiceWebServer(void)
 				{
 					//contData.client.setConnectionTimeout(100);
 
-					//  If there are no other active connections, make this one
-					//  the next to be serviced.
+					//  If there are no other active connections, make this one the next
+					//  to be serviced.
 					if (_activeConnections == 0)
 					{
 						_serviceIndex = i;

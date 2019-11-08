@@ -21,6 +21,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{3A
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DynamicHTML", "examples\DynamicHTML\DynamicHTML.vcxproj", "{4F116083-AA13-492F-9A81-AB2BCD575DF2}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WebSite", "WebSite", "{350AE50A-CE76-4406-BC96-394203F2F5F3}"
+	ProjectSection(SolutionItems) = preProject
+		examples\WebSite\analog.html = examples\WebSite\analog.html
+		examples\WebSite\index.html = examples\WebSite\index.html
+		examples\WebSite\readme.txt = examples\WebSite\readme.txt
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		..\..\..\..\..\..\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\Wire\Wire-1.0.vcxitems*{2ab59789-2af5-4de3-a16d-247f59776973}*SharedItemsImports = 9
@@ -60,6 +67,7 @@ Global
 		{3AD16FB1-7BC0-4416-8B46-591374A30981} = {9EA7929A-6DDF-44B4-9067-4A3B095716B4}
 		{2AB59789-2AF5-4DE3-A16D-247F59776973} = {9EA7929A-6DDF-44B4-9067-4A3B095716B4}
 		{4F116083-AA13-492F-9A81-AB2BCD575DF2} = {3A706DFD-40D2-434C-93F1-4850D3621356}
+		{350AE50A-CE76-4406-BC96-394203F2F5F3} = {3A706DFD-40D2-434C-93F1-4850D3621356}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2ADED74B-278D-449B-8C9A-6F3C0C48CA47}

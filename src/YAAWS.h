@@ -2,20 +2,22 @@
 //
 //  Copyright(c) 2019 M Hotchin
 //
-//  Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-//  and associated documentation files(the "Software"), to deal in the Software without restriction,
-//  including without limitation the rights to use, copy, modify, merge, publish, distribute,
-//  sublicense, and/or sell copies of the Software, andto permit persons to whom the Software is
-//  furnished to do so, subject to the following conditions :
+//  Permission is hereby granted, free of charge, to any person obtaining a copy of this
+//  software and associated documentation files(the "Software"), to deal in the Software
+//  without restriction, including without limitation the rights to use, copy, modify,
+//  merge, publish, distribute, sublicense, and/or sell copies of the Software, andto
+//  permit persons to whom the Software is furnished to do so, subject to the following
+//  conditions :
 //
-//  The above copyright notice andthis permission notice shall be included in all copies or
-//  substantial portions of the Software.
+//  The above copyright notice andthis permission notice shall be included in all copies
+//  or substantial portions of the Software.
 //
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
-//  BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-//  NONINFRINGEMENT.IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-//  DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+//  INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+//  PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+//  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+//  CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+//  OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
 #ifndef _YAAWS_h
@@ -46,11 +48,11 @@
 //  - pretty much all errors are just 404s.
 //  - Cache is only for read-only files.
 //
-//  Saves some memory, and about 1K code.  Works great for small static sites, using at most simple
-//  forms.
+//  Saves some memory, and about 1K code.  Works great for small static sites, using at
+//  most simple forms.
 //
-//  Commented, you get more functionality (in particular, POST style form processing) better error
-//  messages, and more simultaneous connections.
+//  Commented, you get more functionality (in particular, POST style form processing)
+//  better error messages, and more simultaneous connections.
 
 //  #define YAAWS_LEAN_AND_MEAN
 
@@ -80,80 +82,121 @@ typedef SdFile WebFileType;
 //
 //  Callback so you can respond to certain website events.  
 //
-//  'ProcessFormData' is called when a form is submitted with a method of 'GET', 'ProcessPostData'
-//  is called when a form is submitted using 'POST'.  'GET' data is passed directly, 'POST' data is
-//  read by the callback from the 'EthernetClient' object provided.
+//  'ProcessFormData' is called when a form is submitted with a method of 'GET',
+//  'ProcessPostData' is called when a form is submitted using 'POST'.  'GET' data is
+//  passed directly, 'POST' data is read by the callback from the 'EthernetClient' object
+//  provided.
 //
-//  'IsMutable' is used to determine caching strategies, and only mutable files are available for
-//  'FileAction'.  Read-only files are *never* mutable.
+//  'IsMutable' is used to determine caching strategies, and only mutable files are
+//  available for 'FileAction'.  Read-only files are *never* mutable.
 //
-//  'FileAction' is called after the HTML Response header has been sent, but before the requested
-//  file, if the file is mutable (i.e., if 'IsMutable' returned true).  
+//  'FileAction' is called after the HTML Response header has been sent, but before the
+//  requested file, if the file is mutable (i.e., if 'IsMutable' returned true).
 //
-//  You can examine or even modify the response, but you MUST send any part of the file you read and
-//  do not discard to the requestor. If you return 'true', you will continue to be called until you
-//  return 'false', so you don't have to perform all your processing in one go. Once you return
-//  false, the webserver will handle sending any remaining part of the file.
+//
+//  You can examine or even modify the response, but you MUST send any part of the file
+//  you read and do not discard to the requestor. If you return 'true', you will continue
+//  to be called until you return 'false', so you don't have to perform all your
+//  processing in one go. Once you return 'false', the webserver will handle sending any
+//  remaining part of the file.
 //
 class YaawsCallback
 {
 public:
-	virtual void ProcessFormData(const char *path, char *FormData);
+
+	//  For form data you get the path to the file it was submitted to, and the query
+	//  string (still URL encoded).  You can use 'getNextQueryPair' (below) to split the
+	//  query string into name / value pairs.  
+	//
+	//  Return 'true' to continue processing, return 'false' to report a 400 (Bad Request)
+	//  to the client.
+	//
+	//  Default accepts all input, does nothing, and return 'true'.
+	virtual bool ProcessFormData(const char *path, char *FormData);
 
 	//  Removing these from the base class won't cause errors in client code,
 	//  the functions will just never be called.   
 #ifndef YAAWS_GET_IS_ALL_WE_NEED
-	virtual void ProcessPostData(const char *path, EthernetClient &);
+	virtual bool ProcessPostData(const char *path, EthernetClient &);
 #endif
 
 #ifndef YAAWS_NOTHING_EVER_CHANGES
 	virtual bool IsMutable(const char *path);
 
-	//  We don't save the original filename, so nothing matches directly with the path passed to
-	//  'IsMutable'.  Workaround - just use uniquely named files, since you can get the filename
-	//  portion form the file object.
+	//  We don't save the original filename, so nothing matches directly with the path
+	//  passed to 'IsMutable'.  Workaround - just use uniquely named files, since you can
+	//  get the filename portion form the file object.
 	virtual bool FileAction(EthernetClient &, WebFileType &);
 #endif
+
+protected:
+	//  Some utility functions you might find useful.  Declared in the base class like
+	//  this makes them available  to any derived class.
+
+	struct queryPair
+	{
+		const char *_name;
+		const char *_value;
+	};
+
+	//  Breaks apart a query string into name / value pairs.  Initially, call with the
+	//  original query string.  Use the return value on subsequent invokations to move
+	//  along the query string.  You're done when it return 'nullptr'.
+	//
+	//  The 'queryPair' structure will have pointers to both the name and the value
+	//  components.  Each will be already URL decoded.
+	//  - if the value is 'nullptr', then the original query string didn't have a value
+	//    for that name.
+	//  - the value can also be a zero length string.
+	static char *getNextQueryPair(char *queryString, queryPair &nameValuePair);
+
+
+	//  Decodes a URL encoded string in place.  A decoded string is *never* longer than
+	//  the original string 
+	static void urlDecode(char *encodedString);
 };
 
 
 
 
 //
-//  Implements a simple web-server. You provide a SdFat object (containing the files for the
-//  website), and an optional callback class to handle certain web-page events.
+//  Implements a simple web-server. You provide a SdFat object (containing the files for
+//  the website), and an optional callback class to handle certain web-page events.
 //
-//  In your 'loop()' function, call the ServiceWebServer repeatedly.  Each time it is called , it
-//  checks for incoming requests, and start servicing the first one it receives.  Subsequent calls
-//  will continue to service the request - several calls may be required to complete any given
-//  request.  Although this increases latency for any given request, it reduces how much time each
-//  call takes.
+//  In your 'loop()' function, call the ServiceWebServer repeatedly.  Each time it is
+//  called , it checks for incoming requests, and start servicing the first one it
+//  receives.  Subsequent calls will continue to service the request - several calls may
+//  be required to complete any given request.  Although this increases latency for any
+//  given request, it reduces how much time each call takes.
 //
-//  Most calls that are servicing active request should return in less than 10 milliseconds.
+//  Most calls that are servicing active request should return in less than 10
+//  milliseconds.
 //
-//  The webserver will satisfy file requests from the directory 'WWW' located at the root of the
-//  SdCard object (default, constructor can over-ride) .  The website on disk may have any directory
-//  structure, and long filenames are supported by the current version of SdFat.
+//  The webserver will satisfy file requests from the directory 'WWW' located at the root
+//  of the SdCard object (default, constructor can over-ride) .  The website on disk may
+//  have any directory structure, and long filenames are supported by the current version
+//  of SdFat.
 //
-//  Request processing is split into 4 phases, two of which are provided by the callback.  
-//  First, depending of the extension of the file requested, an HTML Response header is generated
-//  and send back to the requester.  
-//  Second, if the request has any form submission parameters, these are passed to the callback to
-//  be processed.   
+//  Request processing is split into 4 phases, two of which are provided by the callback.
+//  
+//  First, depending of the extension of the file requested, an HTML Response header is
+//  generated and send back to the requester.  
+//  Second, if the request has any form submission parameters, these are passed to the
+//  callback to be processed.   
 //  Third, the callback is given the opportunity process the requested file.   
-//  Finally, the remaining part of the file (usually all of it) is sent back to the requestor in
-//  chunks.
+//  Finally, the remaining part of the file (usually all of it) is sent back to the
+//  requestor in chunks.
 
 
-//  We use the base class of both the hardware and software SPI versions of
-//  SdFat.
+//  We use the base class of both the hardware and software SPI versions of SdFat.
 typedef SdFileSystem<SdSpiCard> webSdCard;
 
 class YAAWS
 {
 public:
 
-	//  If you provide a 'webRoot' string, it MUST be declared in PROGMEM, e.g. PSTR("/WebStuff")
+	//  If you provide a 'webRoot' string, it MUST be declared in PROGMEM, e.g.
+	//  PSTR("/WebStuff")
 	YAAWS(webSdCard &SdCard, YaawsCallback &callback,
 			  const char *webRoot = nullptr, uint16_t port = 80);
 	YAAWS(webSdCard &SdCard,
@@ -161,8 +204,8 @@ public:
 
 	bool begin();
 
-	//  Call whenever you can to receive and service requests.  Typical call
-	//  time is up to about 10 milliseconds on a 2650, *if* there is work to do.
+	//  Call whenever you can to receive and service requests.  Typical call time is up to
+	//  about 10 milliseconds on a 2650, *if* there is work to do.
 	void ServiceWebServer();
 
 	enum ResponseType : byte;
@@ -188,8 +231,8 @@ private:
 	
 	
 
-	//  Data we need to allow the request to be 'continued'.  In particular, the file is served in
-	//  numerous chunks, one at each call to 'ServiceWebServer'.
+	//  Data we need to allow the request to be 'continued'.  In particular, the file is
+	//  served in numerous chunks, one at each call to 'ServiceWebServer'.
 	struct ContinuationData
 	{
 		EthernetClient client;  // Connection to the client (requestor)
