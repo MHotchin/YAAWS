@@ -197,7 +197,7 @@ void setup()
 	pinMode(ETHERNET_CS, OUTPUT);
 
 
-	Serial.begin(9600);
+	Serial.begin(115200);
 
 	while (!Serial);  //  Wait for Serial to initialize
 
@@ -212,7 +212,7 @@ void setup()
 		Serial.println(F("Ethernet initialization failed!"));
 	}
 
-	//  If you want a fixed address, then use this instead.  Make sure you use and IP
+	//  If you want a fixed address, then use this instead.  Make sure you use an IP
 	//  address that is on your network!  
 
 	//  IPAddress ip(192, 168, 2, 90);

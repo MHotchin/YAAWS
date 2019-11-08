@@ -215,6 +215,8 @@ char *YaawsCallback::getNextQueryPair(
 
 	nameValuePair._name = queryString;
 	nameValuePair._value = split;
+
+	return retVal;
 }
 
 void YaawsCallback::urlDecode(
@@ -767,7 +769,7 @@ namespace
 
 		RequestType rt = rtUnknown;
 
-		for (auto i = 0; i < COUNTOF(aRequests); i++)
+		for (size_t i = 0; i < COUNTOF(aRequests); i++)
 		{
 			//  Get the request type data from PROGMEM...
 			Request r;
@@ -1018,7 +1020,7 @@ void YAAWS::AcceptIncoming()
 		TRACE(F("Form data:"));
 
 		IF_TRACE(Serial.println(FormDataString));
-		if (!_callback.ProcessFormData(inputFileName, FormDataString))
+		if (!_callback.ProcessFormData(pRequestStart, FormDataString))
 		{
 			Return400BadRequest();
 			return;
@@ -1030,7 +1032,7 @@ void YAAWS::AcceptIncoming()
 	{
 		//  TODO - do we need the value of the 'Content-length' header to do this
 		//  reliably?
-		if (!_callback.ProcessPostData(inputFileName, contData.client))
+		if (!_callback.ProcessPostData(pRequestStart, contData.client))
 		{
 			Return400BadRequest();
 			return;
@@ -1054,7 +1056,7 @@ void YAAWS::AdvanceServiceIndex()
 		//  No need to look for the 'next' connection if this one is the only one.
 		if (_activeConnections != (1 << _serviceIndex))
 		{
-			for (auto i = 0; i < MAX_CLIENTS; i++)
+			for (size_t i = 0; i < MAX_CLIENTS; i++)
 			{
 				_serviceIndex++;
 				_serviceIndex %= MAX_CLIENTS;
@@ -1088,7 +1090,7 @@ void YAAWS::ServiceWebServer(void)
 	if ((_activeConnections & clientsMask) != clientsMask)
 	{
 		//  At least one unused connection exists
-		for (auto i = 0; i < MAX_CLIENTS; i++)
+		for (size_t i = 0; i < MAX_CLIENTS; i++)
 		{
 			if (!(_activeConnections & (1 << i)))
 			{
@@ -1139,7 +1141,7 @@ void YAAWS::ServiceWebServer(void)
 	}
 #endif
 
-	if (_activeConnections && (1 << _serviceIndex))
+	if (_activeConnections & (1 << _serviceIndex))
 	{
 		ContinuationData &contData = _contData[_serviceIndex];
 

@@ -23,10 +23,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DynamicHTML", "examples\Dyn
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WebSite", "WebSite", "{350AE50A-CE76-4406-BC96-394203F2F5F3}"
 	ProjectSection(SolutionItems) = preProject
+		examples\WebSite\AddPass.html = examples\WebSite\AddPass.html
 		examples\WebSite\analog.html = examples\WebSite\analog.html
 		examples\WebSite\index.html = examples\WebSite\index.html
 		examples\WebSite\readme.txt = examples\WebSite\readme.txt
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FormData", "examples\FormData\FormData.vcxproj", "{CD14E9BF-3214-4B65-BAA9-9277C139982E}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -56,6 +59,10 @@ Global
 		{4F116083-AA13-492F-9A81-AB2BCD575DF2}.Debug|x86.Build.0 = Debug|Win32
 		{4F116083-AA13-492F-9A81-AB2BCD575DF2}.Release|x86.ActiveCfg = Release|Win32
 		{4F116083-AA13-492F-9A81-AB2BCD575DF2}.Release|x86.Build.0 = Release|Win32
+		{CD14E9BF-3214-4B65-BAA9-9277C139982E}.Debug|x86.ActiveCfg = Debug|Win32
+		{CD14E9BF-3214-4B65-BAA9-9277C139982E}.Debug|x86.Build.0 = Debug|Win32
+		{CD14E9BF-3214-4B65-BAA9-9277C139982E}.Release|x86.ActiveCfg = Release|Win32
+		{CD14E9BF-3214-4B65-BAA9-9277C139982E}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -68,6 +75,7 @@ Global
 		{2AB59789-2AF5-4DE3-A16D-247F59776973} = {9EA7929A-6DDF-44B4-9067-4A3B095716B4}
 		{4F116083-AA13-492F-9A81-AB2BCD575DF2} = {3A706DFD-40D2-434C-93F1-4850D3621356}
 		{350AE50A-CE76-4406-BC96-394203F2F5F3} = {3A706DFD-40D2-434C-93F1-4850D3621356}
+		{CD14E9BF-3214-4B65-BAA9-9277C139982E} = {3A706DFD-40D2-434C-93F1-4850D3621356}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2ADED74B-278D-449B-8C9A-6F3C0C48CA47}
