@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="DynamicHTML.ino" />
+    <None Include="PostData.ino" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="__vm\.DynamicHTML.vsarduino.h">
+    <ClInclude Include="__vm\.PostData.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

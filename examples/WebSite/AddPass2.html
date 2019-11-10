@@ -27,11 +27,11 @@
 	<TITLE>Gate Password Entry</TITLE>
 </HEAD>
 <BODY>
-	<h1>Form data example page - 'get' processing</h1><br />
+	<h1>Form data example page - 'post' processing</h1><br />
 	<div style="width: 90%; margin: 0 auto;">
 		<div class="FloatLeft" style="width: 50%">
 			<h1>Enter a new password:</h1>
-			<form method="get" autocomplete="off" name="NewPassword" onsubmit="return validateAddForm()">
+			<form method="post" autocomplete="off" name="NewPassword" onsubmit="return validateAddForm()">
 				<div class="VertContainer">
 					<div class="FloatLeft">
 						Rule Name:<br />
@@ -145,12 +145,12 @@
 				<br />
 				<hr />
 				<br />
-				<input type="submit" value="Add Password using 'get'" />
+				<input type="submit" value="Add Password using 'post'" />
 			</form>
 		</div>
 		<div class="FloatRight" style="width: 45%">
 			<h1>Delete a password:</h1>
-			<form method="get" autocomplete="off" name="DelPassword" onsubmit="return validateDelForm()">
+			<form method="post" autocomplete="off" name="DelPassword" onsubmit="return validateDelForm()">
 				Password (4 digits):<br />
 				<input style="margin-left: 1em;" type="text" maxlength="4" size="4" name="X" />
 				<br />
@@ -170,89 +170,89 @@
 		var len = days.length;
 
 		function validateAddForm() {
-			var x;
-			x = document.forms["NewPassword"]["N"].value;
-			if (x == "") {
-				alert("Name must be filled out");
-				return false;
-			}
+		var x;
+		x = document.forms["NewPassword"]["N"].value;
+		if (x == "") {
+		alert("Name must be filled out");
+		return false;
+		}
 
-			x = document.forms["NewPassword"]["P"].value;
-			var isnum = /^\d+$/.test(x);
-			if (x.length < 4 || !isnum) {
-				alert("Password must be 4 digits");
-				return false;
-			}
+		x = document.forms["NewPassword"]["P"].value;
+		var isnum = /^\d+$/.test(x);
+		if (x.length < 4 || !isnum) {
+		alert("Password must be 4 digits");
+		return false;
+		}
 
-			var oneChecked = false;
+		var oneChecked = false;
 
-			for (var i = 0; i < len; i++) {
-				oneChecked = oneChecked || (document.forms["NewPassword"][days[i]].checked);
-			}
+		for (var i = 0; i < len; i++) {
+		oneChecked = oneChecked || (document.forms["NewPassword"][days[i]].checked);
+		}
 
-			if (!oneChecked) {
-				alert("Must select at least one day");
-				return false;
-			}
+		if (!oneChecked) {
+		alert("Must select at least one day");
+		return false;
+		}
 
-			if (Number(document.forms["NewPassword"]["S"].value) >= Number(document.forms["NewPassword"]["E"].value)) {
-				alert("Start Time must be less than End Time");
-				return false;
-			}
-			return true;
+		if (Number(document.forms["NewPassword"]["S"].value) >= Number(document.forms["NewPassword"]["E"].value)) {
+		alert("Start Time must be less than End Time");
+		return false;
+		}
+		return true;
 		}
 
 		function validateDelForm()
 		{
-			x = document.forms["DelPassword"]["X"].value;
-			var isnum = /^\d+$/.test(x);
-			if (x.length < 4 || !isnum) {
-				alert("Password must be 4 digits");
-				return false;
-			}
+		x = document.forms["DelPassword"]["X"].value;
+		var isnum = /^\d+$/.test(x);
+		if (x.length < 4 || !isnum) {
+		alert("Password must be 4 digits");
+		return false;
+		}
 
-			return true;
+		return true;
 		}
 
 
 		function AllDayTime() {
-			var t1 = document.forms["NewPassword"]["S"].selectedIndex;
-			var t2 = document.forms["NewPassword"]["E"].selectedIndex;
-			if (t1 == 0 && t2 == 23) {
-				document.forms["NewPassword"]["A"].checked = true;
-			}
-			else {
-				document.forms["NewPassword"]["A"].checked = false;
-			}
+		var t1 = document.forms["NewPassword"]["S"].selectedIndex;
+		var t2 = document.forms["NewPassword"]["E"].selectedIndex;
+		if (t1 == 0 && t2 == 23) {
+		document.forms["NewPassword"]["A"].checked = true;
+		}
+		else {
+		document.forms["NewPassword"]["A"].checked = false;
+		}
 		}
 
 		function TimeSelect() {
-			if (document.forms["NewPassword"]["A"].checked) {
-				document.forms["NewPassword"]["S"].selectedIndex = 0;
-				document.forms["NewPassword"]["S"].disabled = true;
+		if (document.forms["NewPassword"]["A"].checked) {
+		document.forms["NewPassword"]["S"].selectedIndex = 0;
+		document.forms["NewPassword"]["S"].disabled = true;
 
-				document.forms["NewPassword"]["E"].selectedIndex = 23;
-				document.forms["NewPassword"]["E"].disabled = true;
+		document.forms["NewPassword"]["E"].selectedIndex = 23;
+		document.forms["NewPassword"]["E"].disabled = true;
 
 
-			}
-			else {
-				document.forms["NewPassword"]["S"].disabled = false;
-				document.forms["NewPassword"]["E"].disabled = false;
+		}
+		else {
+		document.forms["NewPassword"]["S"].disabled = false;
+		document.forms["NewPassword"]["E"].disabled = false;
 
-			}
+		}
 		}
 
 		function AllWeekSelect() {
-			var f = false;
-			if (document.forms["NewPassword"]["W"].checked) {
-				f = true;
-			}
+		var f = false;
+		if (document.forms["NewPassword"]["W"].checked) {
+		f = true;
+		}
 
-			for (var i = 0; i < len; i++) {
-				document.forms["NewPassword"][days[i]].disabled = f;
-				document.forms["NewPassword"][days[i]].checked = true;
-			}
+		for (var i = 0; i < len; i++) {
+		document.forms["NewPassword"][days[i]].disabled = f;
+		document.forms["NewPassword"][days[i]].checked = true;
+		}
 		}
 	</script>
 

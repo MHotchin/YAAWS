@@ -48,42 +48,89 @@ constexpr byte ETHERNET_CS = 53;
 
 byte mac[] = {0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02};
 
-class FormHandler : public YaawsCallback
+class PostHandler : public YaawsCallback
 {
-	bool ProcessFormData(const char *path, char *FormData);
+	bool ProcessPostData(const char *path, EthernetClient &);
 };
 
-bool FormHandler::ProcessFormData(
+
+bool PostHandler::ProcessPostData(
 	const char *path,
-	char *FormData)
+	EthernetClient &client)
 {
-	Serial.print(F("Processing form data for file: "));
-	Serial.println(path);
-	Serial.print(F("Original query string: '"));
-	Serial.print(FormData);
+	//  Since we control how the POST data is read in, we don't have the same limits on
+	//  how much there can be.  For this demonstration, each name / value pair can be up
+	//  to 128 bytes, and you can have as many as you want.
+	constexpr size_t buffSize = 128;
+
+	char buffer[buffSize + 1];   //  Add one for the terminating NUL.
+
+	Serial.print(F("Post data for page '"));
+	Serial.print(path);
 	Serial.println(F("'"));
 
-	queryPair nameValuePair;
+	//  Fill up our buffer with stuff to process.
+	auto amountRead = client.readBytes(buffer, buffSize);
+	buffer[amountRead] = '\0';
 
-	char *nextPair = FormData;
+	char *separator = nullptr;
 
-	while (nextPair != nullptr)
+	do
 	{
-		nextPair = getNextQueryPair(nextPair, nameValuePair);
+		//  Look for the end of the first item in the buffer.
+		separator = strchr(buffer, '&');
 
-		Serial.print(F("Name: '"));
-		Serial.print(nameValuePair._name);
-		Serial.print(F("'  Value: '"));
-		Serial.print(nameValuePair._value != nullptr ? nameValuePair._value : "<null>");
-		Serial.println(F("'"));
-	}
+		if ((separator == nullptr) && client.available())
+		{
+			//  Too much data for one set of values.
+			return false;
+		}
 
-	//
-	//  Since we aren't actually doing anything, there is no way to fail.
+		if (separator != nullptr)
+		{
+			//  Convert the first set of values into a NUL terminated string.
+			*separator = '\0';
+		}
+
+		if (*buffer != '\0')
+		{
+			//  Use a function in the base class to break up the name / value set.
+			queryPair nameValuePair;
+
+			getNextQueryPair(buffer, nameValuePair);
+
+			//  Do whatever you need to do with this name / value pair.
+			Serial.print(F("Name: '"));
+			Serial.print(nameValuePair._name);
+			Serial.print(F("'  Value: '"));
+			Serial.print(nameValuePair._value != nullptr ? nameValuePair._value : "<null>");
+			Serial.println(F("'"));
+
+			if (separator != nullptr)
+			{
+				char *nextItem = separator + 1;
+				auto length = strlen(nextItem);
+
+				//  Move the remaining data to the beginning of the buffer...
+				memmove(buffer, nextItem, length + 1);
+
+				// ...and try to refill the end of the buffer
+				if (client.available())
+				{
+					amountRead = client.readBytes(buffer + length, buffSize - length);
+
+					buffer[length + amountRead] = '\0';
+				}
+			}
+		}
+
+	} while (separator != nullptr);
+
 	return true;
 }
 
-FormHandler handler;
+
+PostHandler handler;
 
 //  Default port (80), and the handler above.  Uses default web root.
 YAAWS web(SD, handler);
@@ -100,13 +147,11 @@ void setup()
 	digitalWrite(ETHERNET_CS, HIGH);
 	pinMode(ETHERNET_CS, OUTPUT);
 
-
 	Serial.begin(115200);
 
 	while (!Serial);  //  Wait for Serial to initialize
 
-	Serial.println(F("YAAWS FormData example"));
-
+	Serial.println(F("YAAWS PostData example"));
 
 	Ethernet.init(ETHERNET_CS);
 
@@ -128,12 +173,6 @@ void setup()
 	if (!SD.begin(SDCARD_CS))
 	{
 		Serial.println(F("Can't read SD card."));
-	}
-	else
-	{
-		Serial.print(F("Card Capacity: "));
-		Serial.print(SD.card()->cardCapacity());
-		Serial.println(F(" 512 byte sectors"));
 	}
 
 	if (!web.begin())

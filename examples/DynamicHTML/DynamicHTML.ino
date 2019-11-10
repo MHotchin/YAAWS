@@ -18,8 +18,6 @@
 //  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
 //  CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 //  OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -30,7 +28,7 @@
 #include <YAAWS.h>
 
 //  Some SD card readers don't play well with other SPI devices.  In that case, we can use
-//  software SPI for Sd card reader. #define ENABLE_SOFTWARE_SPI_CLASS=1 as a compiler
+//  software SPI for SD card reader. #define ENABLE_SOFTWARE_SPI_CLASS=1 as a compiler
 //  option, or edit SdFat/SdFatConfig.h
 #if ENABLE_SOFTWARE_SPI_CLASS
 constexpr byte SOFT_SCK_PIN = 5;
@@ -46,10 +44,13 @@ SdFat SD;
 constexpr byte SDCARD_CS = 4;
 constexpr byte ETHERNET_CS = 53;
 
-
 byte mac[] = {0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02};
 
-
+//
+// In order to change the contents of a file, that file must be read-write on the SD card,
+// and you must provide a callback with the following two methods.  'IsMutable' is called
+// to determine which files you want to change, and 'FileAction' is called to do the
+// actual work.
 class DynamicHTMLHandler : public YaawsCallback
 {
 public:
@@ -59,7 +60,7 @@ public:
 	bool FileAction(EthernetClient &, WebFileType &);
 
 private:
-	//  If you process over multiple calls, you'll need to keep your state here.
+	//  If you process over multiple calls, you'll need to keep your state in the handler.
 	int _stepNumber;  //  What 'step' of processing we are on.
 };
 
@@ -179,12 +180,11 @@ DynamicHTMLHandler handler;
 YAAWS web(SD, handler);
 
 //  The SD card you use should have a 'WWW' directory at the root of the card, then some
-//  files that you can use to test the web-server.  If you don't want to make up HTML,
-//  just create some .TXT files, and retrieve then by name, ie 'http://<Ip
-//  Address>/filename.txt'.  
+//  files that you can use to test the web-server.  The 'WebSite' directory under
+//  'Examples' has some files you can use.
 //
 //  For this example, you will need 'analog.html' in your web root directory.  It can
-//  contain whatever you like for this example.
+//  contain whatever you like, or even contain nothing at all for this example.
 
 void setup()
 {
@@ -240,7 +240,6 @@ void setup()
 	{
 		Serial.println(F("Web server started"));
 	}
-
 }
 
 

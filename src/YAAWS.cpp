@@ -57,11 +57,9 @@ namespace
 #define TRACE(X) (void)0
 #define IF_TRACE(X) (void)0
 
-	void printRam()
-	{}
+#define printRam() (void)0
 
-	void quotedTrace(const char *)
-	{}
+#define quotedTrace(x) (void)0;
 
 #endif
 
@@ -210,8 +208,10 @@ char *YaawsCallback::getNextQueryPair(
 		split++;
 	}
 
-	urldecode2(queryString);
-	urldecode2(split);
+	//  Now that things have been split apart at the markers, we can finally decode the
+	//  strings.
+	urlDecode(queryString);
+	urlDecode(split);
 
 	nameValuePair._name = queryString;
 	nameValuePair._value = split;
@@ -227,7 +227,7 @@ void YaawsCallback::urlDecode(
 
 YaawsCallback defaultCallback;
 
-//  Different types of HTML Response headers supported.
+//  All the different HTML 'Content-types' supported.
 //
 enum YAAWS::ResponseType : byte
 {
@@ -272,6 +272,9 @@ namespace
 	//  Read-only files are marked cachable.
 	const char strCacheable[] PROGMEM =
 		"Cache-Control: public, max-age=604800\n";
+
+	//  If not read-only, the files are not cachable.  If you update these files, the
+	//  client will always get the latest version.
 	const char strNonCacheable[] PROGMEM =
 		"Cache-Control: no-cache, no-store, must-revalidate\n";
 
@@ -347,24 +350,24 @@ namespace
 	const ExtensionResponseType ext2rt[] PROGMEM =
 	{
 		{extHTM, YAAWS::htm200},
-	{extHTML, YAAWS::htm200},
-	{extJPG, YAAWS::jpg200},
-	{extJPEG, YAAWS::jpg200},
-	{extGIF, YAAWS::gif200},
-	{extPNG, YAAWS::png200},
-	{extICO, YAAWS::ico200},
-	{extBMP, YAAWS::bmp200},
-	{extSVG, YAAWS::svg200},
-	{extTXT, YAAWS::txt200},
-	{extLOG, YAAWS::txt200},
-	{extJS, YAAWS::js200},
-	{extJPG, YAAWS::js200},
-	{extCSS, YAAWS::css200},
-	{extCSV, YAAWS::csv200},
-	{extEOT, YAAWS::eot200},
-	{extWOFF, YAAWS::woff200},
-	{extWOFF2, YAAWS::woff2200},
-	{extTTF, YAAWS::ttf200}
+		{extHTML, YAAWS::htm200},
+		{extJPG, YAAWS::jpg200},
+		{extJPEG, YAAWS::jpg200},
+		{extGIF, YAAWS::gif200},
+		{extPNG, YAAWS::png200},
+		{extICO, YAAWS::ico200},
+		{extBMP, YAAWS::bmp200},
+		{extSVG, YAAWS::svg200},
+		{extTXT, YAAWS::txt200},
+		{extLOG, YAAWS::txt200},
+		{extJS, YAAWS::js200},
+		{extJPG, YAAWS::js200},
+		{extCSS, YAAWS::css200},
+		{extCSV, YAAWS::csv200},
+		{extEOT, YAAWS::eot200},
+		{extWOFF, YAAWS::woff200},
+		{extWOFF2, YAAWS::woff2200},
+		{extTTF, YAAWS::ttf200}
 	};
 
 	constexpr size_t NumExtensions = COUNTOF(ext2rt);
@@ -695,6 +698,11 @@ void YAAWS::Return405MethodNotAllowed()
 	_contData[_serviceIndex].client.print(F(
 		"HTTP/1.0 405 Method Not Allowed\n"
 		"Content-Type: text/html\n"
+#ifndef YAAWS_GET_IS_ALL_WE_NEED		
+		"Allow: GET, HEAD, POST\n"
+#else
+		"Allow: GET, HEAD\n"
+#endif
 		"Connection: close\n\n"
 		"<HTML>\n"
 		"<HEAD>\n"
@@ -744,8 +752,9 @@ namespace
 
 	const char strGet[] PROGMEM = "GET /";
 	const char strHead[] PROGMEM = "HEAD /";
+#ifndef YAAWS_GET_IS_ALL_WE_NEED
 	const char strPost[] PROGMEM = "POST /";
-
+#endif
 	struct Request
 	{
 		RequestType rt;
@@ -1015,7 +1024,7 @@ void YAAWS::AcceptIncoming()
 
 	//  Process form data.  We assume that only 'GET' requests have data in the request
 	//  header that needs to be processed.
-	if (rt == rtGet && FormDataString != nullptr)
+	if ((rt == rtGet) && (FormDataString != nullptr))
 	{
 		TRACE(F("Form data:"));
 
@@ -1100,8 +1109,6 @@ void YAAWS::ServiceWebServer(void)
 
 				if (contData.client.connected())
 				{
-					//contData.client.setConnectionTimeout(100);
-
 					//  If there are no other active connections, make this one the next
 					//  to be serviced.
 					if (_activeConnections == 0)
