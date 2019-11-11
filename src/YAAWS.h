@@ -48,7 +48,6 @@
 //  - GET style form handling (URL query strings)
 //  - One connection at a time.
 //  - pretty much all errors are just 404s.
-//  - Cache is only for read-only files.
 //
 //  Saves some memory, and about 1K code.  Works great for small static sites, using at
 //  most simple forms.
@@ -56,30 +55,28 @@
 //  Commented out, you get more functionality (in particular, POST style form processing)
 //  better error messages, and more simultaneous connections.
 
-//  #define YAAWS_LEAN_AND_MEAN
-
+// #define YAAWS_LEAN_AND_MEAN
 
 //  You can enable these savings individually if you like.
 #ifdef YAAWS_LEAN_AND_MEAN
 #define YAAWS_ONE_STREAM_ONLY        //  Use only one connection
 #define YAAWS_404_THE_ONE_TRUE_ERROR //  All errors reported as 404
 #define YAAWS_GET_IS_ALL_WE_NEED     //  GET and HEAD support only
-#define YAAWS_NO_CACHE_FOR_YOU       //  Only read-only files cached
 #define YAAWS_NOTHING_EVER_CHANGES   //  All files are immutable.
 #define YAAWS_NO_FLASHY_FLASHY       //  Don't flash built-in LED on activity
 #endif
 
-//  This is a development switch.  You can comment it if you like to see what the
+//  This is a development switch.  You can comment it out if you like to see what the
 //  web-server is doing.
 #define YAAWS_HUSH_NOW               //  Disable internal tracing
 
 // Uncomment these for individual savings.  The biggest RAM saving comes from enabling
-// YAAWS_ONE_STREAM_ONLY.
+// YAAWS_ONE_STREAM_ONLY.  The other save mostly flash (PROGMEM) memory, either from code
+// savings or having fewer PROGMEM strings
 
 // #define YAAWS_ONE_STREAM_ONLY			//  Use only one connection 
 // #define YAAWS_404_THE_ONE_TRUE_ERROR		//  All errors reported as 404
 // #define YAAWS_GET_IS_ALL_WE_NEED			//  GET and HEAD support only
-// #define YAAWS_NO_CACHE_FOR_YOU			//  Only read-only files cached
 // #define YAAWS_NOTHING_EVER_CHANGES		//  All files are immutable.
 // #define YAAWS_NO_FLASHY_FLASHY			//  Don't flash built-in LED on activity
 
@@ -133,7 +130,7 @@ public:
 
 	enum ResponseType : byte;
 private:
-	
+
 
 	ResponseType GetResponseType(const char *filename);
 	void SendResponseHeader();
@@ -152,17 +149,6 @@ private:
 	void AdvanceServiceIndex();
 	const char *GetWebRoot();
 
-	//  Data we need to allow the request to be 'continued'.  In particular, the file is
-	//  served in numerous chunks, one at each call to 'ServiceWebServer'.
-	struct ContinuationData
-	{
-		EthernetClient client;  // Connection to the client (requestor)
-		WebFileType sdFile;     // File to be returned.
-		ResponseType rt;        // 'Content-type' of the file.
-#ifndef YAAWS_NOTHING_EVER_CHANGES
-		bool doFileAction;      //  Do we need to continue calling FileAction()
-#endif
-	};
 
 	EthernetServer _server;
 	webSdCard &_SdCard;
@@ -175,6 +161,17 @@ private:
 #else
 	static constexpr size_t MAX_CLIENTS = 1;
 #endif
+	//  Data we need to allow the request to be 'continued'.  In particular, the file is
+	//  served in numerous chunks, one at each call to 'ServiceWebServer'.
+	struct ContinuationData
+	{
+		EthernetClient client;  // Connection to the client (requestor)
+		WebFileType sdFile;     // File to be returned.
+		ResponseType rt;        // 'Content-type' of the file.
+#ifndef YAAWS_NOTHING_EVER_CHANGES
+		bool doFileAction;      //  Do we need to continue calling FileAction()
+#endif
+	};
 
 	static constexpr byte clientsMask = (1 << MAX_CLIENTS) - 1;
 	ContinuationData _contData[MAX_CLIENTS];
@@ -182,7 +179,7 @@ private:
 #ifndef YAAWS_ONE_STREAM_ONLY
 	byte _serviceIndex;         //  Connection we are servicing
 #else
-	static constexpr byte _serviceIndex = 0; 
+	static constexpr byte _serviceIndex = 0;
 #endif
 
 };
@@ -190,26 +187,25 @@ private:
 
 //  Request processing is split into 4 phases, two of which are provided by the callback.
 //
-
 //  First, if the request has any form submission parameters, these are passed to the
 //  callback to be processed.  
 //  Second, depending of the extension of the file requested, an HTML Response header is
 //  generated and send back to the requester.  
-//  Third, the callback may be given the opportunity process or modify the requested file.   
+//  Third, the callback may be given the opportunity process or modify the requested file.
+//
 //  Finally, the remaining part of the file (usually all of it) is sent back to the
 //  requestor in chunks.
 //
-
-//  *Optional* callback so you can respond to certain website events.  You would provide
-//  this if you want to process form data, or want to make dynamic HTML pages.
+//  *Optional* callback so you can respond to certain website events.  You would derive
+//  from this if you want to process form data, or want to make dynamic HTML pages.
 //
 //  'ProcessFormData' is called when a form is submitted with a method of 'GET',
 //  'ProcessPostData' is called when a form is submitted using 'POST'.  'GET' data is
 //  passed directly, 'POST' data is read by the callback from the 'EthernetClient' object
 //  provided.
 //
-//  'IsMutable' is used to determine caching strategies, and only mutable files are
-//  available for 'FileAction'.  Read-only files are *never* mutable.
+//  'IsMutable' is used to determine which files are available for 'FileAction'.
+//  Read-only files are *never* mutable.
 //
 //  'FileAction' is called after the HTML Response header has been sent, but before the
 //  requested file, if the file is mutable (i.e., if 'IsMutable' returned true).
@@ -240,7 +236,8 @@ public:
 	//  Similar to ProcessFormData, except for 'POST' requests.  The default action is to
 	//  read the POST parameters into a buffer, then pass them to 'ProcessFormData',
 	//  above.  Override this if your post data is too long for the default handler.
-	virtual bool ProcessPostData(const char *path, EthernetClient &client);
+	virtual bool ProcessPostData(const char *path, EthernetClient &client,
+								 unsigned long contentLength);
 #endif
 
 	//  If you want dynamic HTML, this is the place for you.  The first function is called
@@ -279,11 +276,6 @@ protected:
 	//  the original string, so we don't need to know how long the buffer is.
 	static void urlDecode(char *encodedString);
 };
-
-
-
-
-
 
 #endif
 

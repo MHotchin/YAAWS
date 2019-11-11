@@ -50,28 +50,36 @@ byte mac[] = {0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02};
 
 class PostHandler : public YaawsCallback
 {
-	bool ProcessPostData(const char *path, EthernetClient &);
+	bool ProcessPostData(const char *path, EthernetClient &,
+						 unsigned long contentLength);
 };
 
 
 bool PostHandler::ProcessPostData(
 	const char *path,
-	EthernetClient &client)
+	EthernetClient &client,
+	unsigned long contentLength)
 {
 	//  Since we control how the POST data is read in, we don't have the same limits on
 	//  how much there can be.  For this demonstration, each name / value pair can be up
-	//  to 128 bytes, and you can have as many as you want.
+	//  to 128 bytes (URL encoded length), and you can have as many as you want.
 	constexpr size_t buffSize = 128;
-
 	char buffer[buffSize + 1];   //  Add one for the terminating NUL.
 
 	Serial.print(F("Post data for page '"));
 	Serial.print(path);
 	Serial.println(F("'"));
+	Serial.print(F("Content Length: "));
+	Serial.println(contentLength);
 
-	//  Fill up our buffer with stuff to process.
-	auto amountRead = client.readBytes(buffer, buffSize);
+	unsigned long totalRead = 0;
+
+	//  Fill up our buffer with stuff to process.  We can avoid long timeouts by never
+	//  asking for more than a total of 'contentLength' bytes of data.
+	auto amountRead = client.readBytes(buffer, min(buffSize, contentLength));
 	buffer[amountRead] = '\0';
+
+	totalRead += amountRead;
 
 	char *separator = nullptr;
 
@@ -80,7 +88,7 @@ bool PostHandler::ProcessPostData(
 		//  Look for the end of the first item in the buffer.
 		separator = strchr(buffer, '&');
 
-		if ((separator == nullptr) && client.available())
+		if ((separator == nullptr) && (totalRead < contentLength))
 		{
 			//  Too much data for one set of values.
 			return false;
@@ -115,11 +123,13 @@ bool PostHandler::ProcessPostData(
 				memmove(buffer, nextItem, length + 1);
 
 				// ...and try to refill the end of the buffer
-				if (client.available())
+				if (totalRead < contentLength)
 				{
-					amountRead = client.readBytes(buffer + length, buffSize - length);
+					auto amountToRead = min(buffSize - length, contentLength - totalRead);
+					amountRead = client.readBytes(buffer + length, amountToRead);
 
 					buffer[length + amountRead] = '\0';
+					totalRead += amountRead;
 				}
 			}
 		}

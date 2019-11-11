@@ -40,13 +40,6 @@ namespace
 #ifndef YAAWS_HUSH_NOW
 #define TRACE(X) Serial.print(millis()),Serial.print(F("  ")),Serial.println(X)
 #define IF_TRACE(X) (X)
-
-	void printRam()
-	{
-		Serial.print(F("Free mem: "));
-		Serial.println(freeRam());
-	}
-
 	void quotedTrace(const char *p)
 	{
 		Serial.print(F("\""));
@@ -57,13 +50,9 @@ namespace
 #define TRACE(X) (void)0
 #define IF_TRACE(X) (void)0
 
-#define printRam() (void)0
-
 #define quotedTrace(x) (void)0;
 
 #endif
-
-
 	class FlashyFlashy
 	{
 	public:
@@ -150,10 +139,17 @@ bool YaawsCallback::ProcessFormData(
 //  Default implementation just passes the POST data as a URL query string to the GET
 //  handler.
 bool YaawsCallback::ProcessPostData(
-	const char *path, EthernetClient &client)
+	const char *path,
+	EthernetClient &client,
+	unsigned long contentLength)
 {
 	constexpr size_t bufferSize = 128;
 	char buffer[bufferSize + 1];
+
+	if (contentLength > bufferSize)
+	{
+		return false;
+	}
 
 	auto amountRead = client.readBytes(buffer, bufferSize);
 
@@ -350,24 +346,24 @@ namespace
 	const ExtensionResponseType ext2rt[] PROGMEM =
 	{
 		{extHTM, YAAWS::htm200},
-		{extHTML, YAAWS::htm200},
-		{extJPG, YAAWS::jpg200},
-		{extJPEG, YAAWS::jpg200},
-		{extGIF, YAAWS::gif200},
-		{extPNG, YAAWS::png200},
-		{extICO, YAAWS::ico200},
-		{extBMP, YAAWS::bmp200},
-		{extSVG, YAAWS::svg200},
-		{extTXT, YAAWS::txt200},
-		{extLOG, YAAWS::txt200},
-		{extJS, YAAWS::js200},
-		{extJPG, YAAWS::js200},
-		{extCSS, YAAWS::css200},
-		{extCSV, YAAWS::csv200},
-		{extEOT, YAAWS::eot200},
-		{extWOFF, YAAWS::woff200},
-		{extWOFF2, YAAWS::woff2200},
-		{extTTF, YAAWS::ttf200}
+	{extHTML, YAAWS::htm200},
+	{extJPG, YAAWS::jpg200},
+	{extJPEG, YAAWS::jpg200},
+	{extGIF, YAAWS::gif200},
+	{extPNG, YAAWS::png200},
+	{extICO, YAAWS::ico200},
+	{extBMP, YAAWS::bmp200},
+	{extSVG, YAAWS::svg200},
+	{extTXT, YAAWS::txt200},
+	{extLOG, YAAWS::txt200},
+	{extJS, YAAWS::js200},
+	{extJPG, YAAWS::js200},
+	{extCSS, YAAWS::css200},
+	{extCSV, YAAWS::csv200},
+	{extEOT, YAAWS::eot200},
+	{extWOFF, YAAWS::woff200},
+	{extWOFF2, YAAWS::woff2200},
+	{extTTF, YAAWS::ttf200}
 	};
 
 	constexpr size_t NumExtensions = COUNTOF(ext2rt);
@@ -475,18 +471,18 @@ void YAAWS::SendResponseHeader()
 
 
 	//  404 is one piece, all others are made up of three pieces.
-	if (_contData[_serviceIndex].rt != htm404)
+	if (contData.rt != htm404)
 	{
 		strncpy_P(buffer, str200Header, buffSize);
 	}
 
-	strncat_P(buffer, pgm_read_ptr(&aResponses[_contData[_serviceIndex].rt]), buffSize);
+	strncat_P(buffer, pgm_read_ptr(&aResponses[contData.rt]), buffSize);
 
-	if (_contData[_serviceIndex].rt != htm404)
+	if (contData.rt != htm404)
 	{
 		strncat_P(buffer, PSTR("\n"), buffSize);
 
-		bool isCacheable = _contData[_serviceIndex].sdFile.isReadOnly();
+		bool isCacheable = contData.sdFile.isReadOnly();
 
 		if (isCacheable)
 		{
@@ -497,9 +493,8 @@ void YAAWS::SendResponseHeader()
 			strncat_P(buffer, strNonCacheable, buffSize);
 		}
 
-		//  If the file is not mutable, we can provide a Content-length: directive and an
-		//  'ETag' for cache validation.  Only mutable files will have this set at this
-		//  point.
+		//  If the file is not mutable, we can provide a Content-length: directive.  Only
+		//  mutable files will have this set at this point.
 #ifndef YAAWS_NOTHING_EVER_CHANGES
 		if (!contData.doFileAction)
 #endif
@@ -508,13 +503,7 @@ void YAAWS::SendResponseHeader()
 			ltoa(_contData[_serviceIndex].sdFile.fileSize(), buffer + strlen(buffer), 10);
 			strncat_P(buffer, PSTR("\n"), buffSize);
 
-
 			//  TODO - Etag validation not yet implemented.
-#ifndef YAAWS_NO_CACHE_FOR_YOU
-			//strncat_P(buffer, PSTR("ETag: \""), buffSize);
-			//ltoa(_contData[_serviceIndex].sdFile.fileSize(), buffer + strlen(buffer), 16);
-			//strncat_P(buffer, PSTR("\"\n"), buffSize);
-#endif
 		}
 
 		strncat_P(buffer, PSTR("\n"), buffSize);
@@ -523,7 +512,7 @@ void YAAWS::SendResponseHeader()
 	buffer[buffSize] = '\0';
 
 	FlashyFlashy ff;
-	_contData[_serviceIndex].client.write(buffer);
+	contData.client.write(buffer);
 
 	return;
 }
@@ -561,9 +550,11 @@ void YAAWS::SendSdFile()
 	if (amountToWrite > 0)
 	{
 		//  Maximum we will write in one go. If we have only one client, use as much of
-		//  the undlying Ethernet frame size as possible.  Otherwise, limit to a multiple
-		//  of the SD sector size to reduce SD card redundant reads. 
+		//  the underlying Ethernet frame size as possible.  Otherwise, limit to a
+		//  multiple of the SD sector size to reduce SD card redundant reads. 
 		constexpr int maxBufferSize = (MAX_CLIENTS == 1) ? 1400 : 1024;
+
+		amountToWrite = min(amountToWrite, maxBufferSize);
 
 #ifndef YAAWS_ONE_STREAM_ONLY
 		//  If we want aligned reads, then make sure we are actually aligned.
@@ -802,7 +793,11 @@ namespace
 		//  Do nothing for unknown request types
 		return rt;
 	}
+
+	const char contentLengthMarker[] PROGMEM = "content-length: ";
 }
+
+
 
 
 //  Initial processing of any request:
@@ -812,9 +807,6 @@ namespace
 //   - Process any form data
 void YAAWS::AcceptIncoming()
 {
-	// Everything we need is on the first line, before the 'HTTP' keyword. Once we've
-	// located the keyword, we can throw everything else away.
-	//
 	// TO-DO - better buffer size for this?
 	constexpr size_t buffSize = 128;
 	char inputFileName[buffSize + 1] = {0};
@@ -833,7 +825,6 @@ void YAAWS::AcceptIncoming()
 		TRACE(F("Awaiting incoming payload"));
 		return;
 	}
-
 
 	//  Start building the filename to be returned.
 	strcpy_P(inputFileName, GetWebRoot());
@@ -882,7 +873,6 @@ void YAAWS::AcceptIncoming()
 	//  Re-terminate the request at the marker.  Now all we have is a NUL terminated URI.
 	*end = '\0';
 
-
 	//  Determines the type of the request, then moves the URI down.  This appends it to
 	//  the webroot we initialized with (above), and gives us the filename.
 	RequestType rt = GetRequestType(pRequestStart);
@@ -919,6 +909,11 @@ void YAAWS::AcceptIncoming()
 #ifndef YAAWS_GET_IS_ALL_WE_NEED
 	//  The end of the HTML request header is marked by the 4 character sequence
 	//  "\r\n\r\n".  Data after that may be needed for processing (e.g., POST requests)
+	//  We also want the 'Content-Length' value if there is one.
+	const char *pContentLengthMatch = contentLengthMarker;
+	bool fGetLength = false;
+	unsigned long contentLength = 0;
+
 	if (rt == rtPost)
 	{
 		int HeaderMarker = 0;
@@ -939,6 +934,49 @@ void YAAWS::AcceptIncoming()
 				if (c == '\n') HeaderMarker++; else HeaderMarker = 0;
 				break;
 			}
+
+			//  If we found the the 'Content-length' marker, then the following digits
+			//  define the length.
+			if (fGetLength)
+			{
+				if (isdigit(c))
+				{
+					contentLength = contentLength * 10 + (c - '0');
+				}
+				else
+				{
+					//  All done
+					fGetLength = false;
+				}
+			}
+
+			//  Spec says case-insensitive!
+			byte l = tolower(c);
+
+			//  Keep track of how far into the marker we've matched.
+			if (l == pgm_read_byte(pContentLengthMatch))
+			{
+				pContentLengthMatch++;
+
+				//  If we've reached the end of the string, then we can read the length
+				//  value (above).
+				if (pgm_read_byte(pContentLengthMatch) == '\0')
+				{
+					fGetLength = true;
+				}
+			}
+			else
+			{
+				//  No match, start over...
+				pContentLengthMatch = contentLengthMarker;
+
+				//  ... but see if we've started a new match with this character
+				if (l == pgm_read_byte(pContentLengthMatch))
+				{
+					pContentLengthMatch++;
+				}
+			}
+
 		}
 
 		if (HeaderMarker != 4)
@@ -1031,7 +1069,11 @@ void YAAWS::AcceptIncoming()
 		IF_TRACE(Serial.println(FormDataString));
 		if (!_callback.ProcessFormData(pRequestStart, FormDataString))
 		{
+#ifndef YAAWS_404_THE_ONE_TRUE_ERROR
 			Return400BadRequest();
+#else
+			Return404(inputFileName);
+#endif
 			return;
 		}
 	}
@@ -1039,11 +1081,13 @@ void YAAWS::AcceptIncoming()
 #ifndef YAAWS_GET_IS_ALL_WE_NEED
 	if (rt == rtPost)
 	{
-		//  TODO - do we need the value of the 'Content-length' header to do this
-		//  reliably?
-		if (!_callback.ProcessPostData(pRequestStart, contData.client))
+		if (!_callback.ProcessPostData(pRequestStart, contData.client, contentLength))
 		{
+#ifndef YAAWS_404_THE_ONE_TRUE_ERROR
 			Return400BadRequest();
+#else
+			Return404(inputFileName);
+#endif
 			return;
 		}
 	}
