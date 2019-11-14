@@ -3,7 +3,7 @@ Yet Another Arduino Web Server
 
 As part of my first Arduino project, I wanted to be able to monitor and control it from a web browser.  I could have used or adapted an existing solution, but where's the fun in that?
 
-Thus was born YAAWS, Yet Another Arduino Web Server.  I'm releasing it hoping that others might find it useful.
+Thus was born YAAWS, Yet Another Arduino Web Server.  I'm releasing it hoping that others might find it useful.  It's published under the MIT license.
 
 YAAWS provides:
   - GET / HEAD support
